@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        MangaDex list generator
 // @namespace   AcmeZexe
-// @version     1.1.2
+// @version     1.1.3
 // @description -
 // @author      AcmeZexe
 // @match       *://mangadex.*/title/*/chapters*
@@ -60,6 +60,10 @@
 				parseFloat(enChapters[0].chapter) + '-' +
 				parseFloat(enChapters[enChapters.length-1].chapter)
 			);
+			if (toDownload === null) {
+				// user cancelled
+				return;
+			}
 
 			if (toDownload.indexOf('-') !== -1) {
 				toDownload = toDownload.split('-');
