@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        MangaDex list generator
 // @namespace   AcmeZexe
-// @version     1.1.4
+// @version     1.1.5
 // @description -
 // @author      AcmeZexe
 // @match       *://mangadex.*/title/*/chapters*
@@ -20,6 +20,16 @@
 	}
 
 	if (!confirm("Download this manga?")) return;
+
+	function sanitize(str) {
+		var output = str.replace( // \x7F-\uFFFF
+			/[\\\/?%*:|"<>\x00-\x1F]/g, '-'
+		);
+		while (output.indexOf("--") !== -1) { // remove consecutive '-'s
+			output = output.replace(/-+/g, '-');
+		}
+		return output;
+	}
 
 	var enChapters = [];
 	fetch("//" + window.location.hostname + "/api/manga/" + mangaIDs[0])
@@ -90,18 +100,12 @@
 			// don't filter the chapters, download everything
 		}
 
+		const mangaTitle = sanitize(manga_body.manga.title);
 		var pages = ""; // ~130% faster than array join
 		enChapters.reduce(async (prevPromise, chap) => {
 			await prevPromise;
 
-			var groupName = chap.group_name.replace(
-				/[\\\/?%*:|"<>\x00-\x1F\x7F-\uFFFF]/g, '-'
-			);
-			while (groupName.indexOf("--") !== -1) { // remove consecutive '-'s
-				groupName = groupName.replace(/-+/g, '-');
-			}
-
-			const dir = manga_body.manga.title + "/c" + chap.chapter + " [" + groupName + "]/";
+			const dir = mangaTitle + "/c" + chap.chapter + " [" + sanitize(chap.group_name) + "]/";
 			return fetch("//" + window.location.hostname + "/api/chapter/" + chap.chapter_id)
 			.then(r => r.json()).then(chapter_body => {
 				const path = chapter_body.server + chapter_body.hash;
