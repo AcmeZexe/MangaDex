@@ -28,13 +28,15 @@
 		for (const ch in manga_body.chapter) {
 			if (manga_body.chapter[ch].lang_code === "gb") {
 				enChapters.push({...manga_body.chapter[ch], "chapter_id": ch});
+				const chapterAsFloat = parseFloat(manga_body.chapter[ch].chapter);
 				if (!append &&
-					parseFloat(manga_body.chapter[ch].chapter) !==
-					Math.floor(parseFloat(manga_body.chapter[ch].chapter))
+				    !isNaN(chapterAsFloat) &&
+				    chapterAsFloat !== Math.floor(chapterAsFloat)
 				) append = true;
 			}
 		}
 
+		// padleft chapter numbers (even if float)
 		enChapters.forEach(chap => {
 			const c = chap.chapter.split('.');
 			if (append && c.length == 1) {
@@ -56,14 +58,12 @@
 		});
 
 		try {
-			let toDownload = prompt("Dowload (incl.)?",
-				parseFloat(enChapters[0].chapter) + '-' +
-				parseFloat(enChapters[enChapters.length-1].chapter)
-			);
-			if (toDownload === null) {
-				// user cancelled
-				return;
-			}
+			const chaptersInterval = (enChapters.length === 1) ?
+				parseFloat(enChapters[0].chapter) :
+				parseFloat(enChapters[0].chapter) + '-' + parseFloat(enChapters[enChapters.length-1].chapter)
+			;
+			let toDownload = prompt("Dowload (incl.)?", chaptersInterval);
+			if (toDownload === null) return; // user cancelled
 
 			if (toDownload.indexOf('-') !== -1) {
 				toDownload = toDownload.split('-');
