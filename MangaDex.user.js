@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        MangaDex list generator
 // @namespace   AcmeZexe
-// @version     1.1.3
+// @version     1.1.4
 // @description -
 // @author      AcmeZexe
 // @match       *://mangadex.*/title/*/chapters*
