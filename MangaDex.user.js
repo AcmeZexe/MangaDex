@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        MangaDex list generator
 // @namespace   AcmeZexe
-// @version     1.1.5
+// @version     1.1.6
 // @description -
 // @author      AcmeZexe
 // @match       *://mangadex.*/title/*/chapters*
@@ -28,7 +28,7 @@
 		while (output.indexOf("--") !== -1) { // remove consecutive '-'s
 			output = output.replace(/-+/g, '-');
 		}
-		return output;
+		return output.trim();
 	}
 
 	var enChapters = [];
@@ -100,7 +100,7 @@
 			// don't filter the chapters, download everything
 		}
 
-		const mangaTitle = sanitize(manga_body.manga.title);
+		const mangaTitle = sanitize(manga_body.manga.title).replace(/(^[.-]+)|([.-]+$)/, '');
 		var pages = ""; // ~130% faster than array join
 		enChapters.reduce(async (prevPromise, chap) => {
 			await prevPromise;
