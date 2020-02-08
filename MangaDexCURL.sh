@@ -30,17 +30,17 @@ for fn in "$@"; do
 		#echo >> ${tmp}
 
 		line=0
-		while IFS=$'\t' read filename location; do
+		while IFS=$'\t' read destination origin; do
 			line=$((line+1))
 
-			if [ -z "${filename}" ] && [ -z "${location}" ]; then
+			if [ -z "${destination}" ] && [ -z "${origin}" ]; then
 				true #>&2 echo "${fn}:${line}: Empty Line. Skipping"
 
-			elif [ -z "${filename}" ] || [ -z "${location}" ]; then
-				>&2 echo "${fn}:${line}: Malformed Line. Skipping"
+			elif [ -z "${destination}" ] || [ -z "${origin}" ]; then
+				>&2 echo "${fn}:${line}: Malformed Line (not [destination]	[origin]). Skipping"
 
-			elif ! [ -f "download/${filename}" ]; then
-				curl --create-dirs -fSL "${location}" -o "download/${filename}"
+			elif ! [ -f "download/${destination}" ]; then
+				curl --create-dirs -fSL "${origin}" -o "download/${destination}"
 
 			fi
 		done < "${tmp}"
