@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        MangaDex list generator
 // @namespace   AcmeZexe
-// @version     1.1.8
+// @version     1.1.9
 // @description -
 // @author      AcmeZexe
 // @match       *://mangadex.*/title/*/chapters*
@@ -10,7 +10,7 @@
 // @grant       GM_setClipboard
 // ==/UserScript==
 
-(function(mangaURL) {
+(function(mangaURL, multipleGroups = true) {
 	"use strict";
 	const mangaIDs = mangaURL.match(/\d+/);
 	if (mangaIDs === null) {
@@ -30,6 +30,8 @@
 		}
 		return output.trim();
 	}
+
+	multipleGroups = !!multipleGroups;
 
 	var enChapters = [];
 	fetch("//" + window.location.hostname + "/api/manga/" + mangaIDs[0])
@@ -106,8 +108,17 @@
 			const dir = mangaTitle +
 				"/c" + chap.chapter +
 				(chap.title ? " " + sanitize(chap.title) : "") +
-				" [" + sanitize(chap.group_name) + "]/"
-			;
+				(
+					(chap.group_id + chap.group_id_2 + chap.group_id_3) === 0 ? "" :
+					(" [" +
+						sanitize(chap.group_name) +
+						(multipleGroups ? (
+							(chap.group_id_2 ? ", " + sanitize(chap.group_name_2) : "") +
+							(chap.group_id_3 ? ", " + sanitize(chap.group_name_3) : "")
+						) : "") +
+					"]")
+				) +
+				"/";
 			return fetch("//" + window.location.hostname + "/api/chapter/" + chap.chapter_id)
 			.then(r => r.json()).then(chapter_body => {
 				const path = chapter_body.server + chapter_body.hash;
