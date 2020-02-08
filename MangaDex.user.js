@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        MangaDex list generator
 // @namespace   AcmeZexe
-// @version     1.1.7
+// @version     1.1.8
 // @description -
 // @author      AcmeZexe
 // @match       *://mangadex.*/title/*/chapters*
@@ -34,7 +34,7 @@
 	var enChapters = [];
 	fetch("//" + window.location.hostname + "/api/manga/" + mangaIDs[0])
 	.then(r => r.json()).then(manga_body => {
-		var fractional = 0.0;
+		var fractional = 0;
 		for (const ch in manga_body.chapter) {
 			if (manga_body.chapter[ch].lang_code === "gb") {
 				enChapters.push({...manga_body.chapter[ch], "chapter_id": ch});
@@ -46,13 +46,11 @@
 			}
 		}
 
-		//const frLen = Math.log((fractional + "").split('.')[1]) * Math.LOG10E + 1 | 0;
-		const frLen = ((fractional + "").split('.')[1]).length;
+		const frLen = Math.log((fractional + "").split('.')[1]) * Math.LOG10E + 1 | 0;
 
 		enChapters.forEach(chap => {
 			let c = chap.chapter.split('.');
 			if (c.length === 1) c[1] = '';
-			//c[1] = c[1].padEnd(frLen, '0');
 			chap.chapter = c[0].padStart(3, '0') + (frLen ? ('.' + c[1].padEnd(frLen, '0')) : '');
 		});
 
@@ -105,7 +103,11 @@
 		enChapters.reduce(async (prevPromise, chap) => {
 			await prevPromise;
 
-			const dir = mangaTitle + "/c" + chap.chapter + " [" + sanitize(chap.group_name) + "]/";
+			const dir = mangaTitle +
+				"/c" + chap.chapter +
+				(chap.title ? " " + sanitize(chap.title) : "") +
+				" [" + sanitize(chap.group_name) + "]/"
+			;
 			return fetch("//" + window.location.hostname + "/api/chapter/" + chap.chapter_id)
 			.then(r => r.json()).then(chapter_body => {
 				const path = chapter_body.server + chapter_body.hash;
@@ -134,12 +136,12 @@
 					// fn[3] is the suffix, if it exists
 
 					pages +=
-						// save location
+						// destination
 						dir + fn[1] + fn[2].padStart(3, '0') + fn[3] + '.' + file[1]
 
 						+ '\t' +
 
-						// download location
+						// origin
 						path + '/' + pageFilename
 
 						+ '\n'
