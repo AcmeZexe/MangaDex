@@ -34,7 +34,7 @@
 	var enChapters = [];
 	fetch("//" + window.location.hostname + "/api/manga/" + mangaIDs[0])
 	.then(r => r.json()).then(manga_body => {
-		var fractional = 0;
+		var fractional = 0.0;
 		for (const ch in manga_body.chapter) {
 			if (manga_body.chapter[ch].lang_code === "gb") {
 				enChapters.push({...manga_body.chapter[ch], "chapter_id": ch});
