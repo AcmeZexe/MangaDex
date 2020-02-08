@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        MangaDex list generator
 // @namespace   AcmeZexe
-// @version     1.1.6
+// @version     1.1.7
 // @description -
 // @author      AcmeZexe
 // @match       *://mangadex.*/title/*/chapters*
@@ -34,26 +34,26 @@
 	var enChapters = [];
 	fetch("//" + window.location.hostname + "/api/manga/" + mangaIDs[0])
 	.then(r => r.json()).then(manga_body => {
-		var append = false;
+		var fractional = 0;
 		for (const ch in manga_body.chapter) {
 			if (manga_body.chapter[ch].lang_code === "gb") {
 				enChapters.push({...manga_body.chapter[ch], "chapter_id": ch});
 				const chapterAsFloat = parseFloat(manga_body.chapter[ch].chapter);
-				if (!append &&
-				    !isNaN(chapterAsFloat) &&
-				    chapterAsFloat !== Math.floor(chapterAsFloat)
-				) append = true;
+				if (!isNaN(chapterAsFloat)) {
+					const fr = (chapterAsFloat - (chapterAsFloat << 0));
+					if (fr > fractional) fractional = fr;
+				}
 			}
 		}
 
-		// padleft chapter numbers (even if float)
+		//const frLen = Math.log((fractional + "").split('.')[1]) * Math.LOG10E + 1 | 0;
+		const frLen = ((fractional + "").split('.')[1]).length;
+
 		enChapters.forEach(chap => {
-			const c = chap.chapter.split('.');
-			if (append && c.length == 1) {
-				// append the fractional part, even if it is an integer
-				c[1] = '0';
-			}
-			chap.chapter = c[0].padStart(3, '0') + (c[1] ? ('.' + c[1]) : '');
+			let c = chap.chapter.split('.');
+			if (c.length === 1) c[1] = '';
+			//c[1] = c[1].padEnd(frLen, '0');
+			chap.chapter = c[0].padStart(3, '0') + (frLen ? ('.' + c[1].padEnd(frLen, '0')) : '');
 		});
 
 		enChapters.sort((ch1, ch2) => { // TODO? oneshots
