@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        MangaDex list generator
 // @namespace   AcmeZexe
-// @version     1.2.1
+// @version     1.2.2
 // @description -
 // @author      AcmeZexe
 // @match       *://mangadex.*/title/*/chapters*
@@ -46,8 +46,8 @@
 	let showTitle = false
 	let multipleGroups = false
 	if (!useDefaults) {
-		showTitle = !!window.confirm("Show chapters titles?")
-		multipleGroups = !!window.confirm("Show multiple scanlators groups?")
+		showTitle = !window.confirm("Hide chapter title?")
+		multipleGroups = !window.confirm("Hide secondary scanlator groups?")
 	}
 
 	window.fetch("//" + window.location.hostname + "/api/manga/" + mangaIDs[0])
