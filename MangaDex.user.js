@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        MangaDex list generator
 // @namespace   AcmeZexe
-// @version     1.2.0
+// @version     1.2.1
 // @description -
 // @author      AcmeZexe
 // @match       *://mangadex.*/title/*/chapters*
@@ -24,9 +24,13 @@
 
 	if (!window.confirm("Download this manga?")) return
 
+	var parser = new window.DOMParser
 	function sanitize (str, removeDiacriticalMarks = true) {
-		let output = str.replace( // \x7F-\uFFFF
-			/[\\/?%*:|"<>\x00-\x1F]/g, '-'
+		let output = parser.parseFromString(
+			'<!doctype html><body>' + str.replace(/[<>]/g, '-'),
+			'text/html'
+		).body.textContent.replace( // \x7F-\uFFFF
+			/[\\/?%*:|"\x00-\x1F]/g, '-'
 		)
 		if (removeDiacriticalMarks) {
 			output = output.normalize("NFD").replace(/[\u0300-\u036f]/g, '')
