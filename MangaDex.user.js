@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        MangaDex list generator
 // @namespace   AcmeZexe
-// @version     1.2.2
+// @version     1.2.3
 // @description -
 // @author      AcmeZexe
 // @match       *://mangadex.*/title/*/chapters*
@@ -16,13 +16,18 @@
 	const mangaIDs = mangaURL.match(/\d+/)
 	if (mangaIDs === null) {
 		// UserScript's match/include matched a bad url
-		const e = 'Please let the developers know: "mid_' + mangaURL + '"'
+		const e = 'Please let the developers know:\n"mid_' + mangaURL + '"'
 		console.error(e)
 		window.alert(e)
 		return
 	}
 
 	if (!window.confirm("Download this manga?")) return
+
+	const approx6 = n => (Math.round((n + Number.EPSILON) * 10E6) / 10E6)
+	const nrOfDigits = n => (Math.log(n) * Math.LOG10E + 1 | 0)
+	const fractionalPart = n => (n - (n << 0));
+	const noUndefined = s => ((s === undefined) ? '' : s)
 
 	var parser = new window.DOMParser
 	function sanitize (str, removeDiacriticalMarks = true) {
@@ -64,7 +69,7 @@
 			if (!useDefaults) {
 				window.alert(
 					'No languages available.\n' +
-					'If this is wrong, please let the developers know: ' +
+					'If this is wrong, please let the developers know:\n' +
 					'"nls_' + mangaIDs[0] + '"'
 				)
 				return
@@ -73,11 +78,11 @@
 		}
 		languages.sort()
 
+		const langs = languages.join(',');
 		let userLangs = downloadAllLanguages ? '*' : window.prompt(
-			"Languages? * = everything. Available: " + languages.join(','),
-			useDefaults
-				? ((languages.indexOf("gb") !== -1) ? "gb" : languages[0])
-				: languages.join(',')
+			'In which languages? (Use * to select all)\nAvailable: ' + langs,
+			(!useDefaults) ? langs
+				: ((languages.indexOf("gb") !== -1) ? "gb" : languages[0])
 		)
 		if (userLangs === null) return // user cancelled
 		if (userLangs.length === 0) {
@@ -110,16 +115,13 @@
 					)
 					if (!isNaN(chapterAsFloat)) {
 						if (chapterAsFloat > integer) integer = chapterAsFloat
-						const frPart = (chapterAsFloat - (chapterAsFloat << 0))
-						if (frPart > decimal) decimal = frPart
+						const aFrPart = fractionalPart(chapterAsFloat)
+						if (aFrPart > decimal) decimal = aFrPart
 					}
 				}
 			}
-
-			const nrOfDigits = n => (Math.log(n) * Math.LOG10E + 1 | 0)
-			const integerLen = nrOfDigits(Math.ceil(integer))
-			const decimalLen = nrOfDigits((decimal + '').split('.')[1])
-
+			const integerLen = nrOfDigits(Math.ceil(integer)) + 1
+			const decimalLen = nrOfDigits((approx6(decimal) + '').split('.')[1])
 			Chapters.forEach(chap => {
 				const c = chap.chapter.split('.')
 				if (c.length === 1) c[1] = ''
@@ -140,11 +142,17 @@
 		})
 
 		try {
-			const chaptersInterval = (Chapters.length === 1)
-				? parseFloat(Chapters[0].chapter)
-				: parseFloat(Chapters[0].chapter) + '-' +
-					parseFloat(Chapters[Chapters.length - 1].chapter)
-			let toDownload = window.prompt("Dowload (incl.)?", chaptersInterval)
+			const lastChap = parseFloat(Chapters[Chapters.length - 1].chapter)
+			const chaptersInterval = parseFloat(Chapters[0].chapter)
+			const hint = ''
+
+			if (Chapters.length !== 1) chaptersInterval += '-' + lastChap
+			else hint = '\nSingle chapters (ex: ' + lastChap + ') also work'
+
+			let toDownload = window.prompt(
+				'Dowload interval (inclusive)?' + hint,
+				chaptersInterval
+			)
 			if (toDownload === null) return // user cancelled
 
 			if (toDownload.indexOf('-') !== -1) {
@@ -202,50 +210,41 @@
 				window.location.hostname + '/api/chapter/' + c.chapter_id
 			).then(r => r.json()).then(chapterObj => {
 				const path = chapterObj.server + chapterObj.hash
+				const pagesNr = chapterObj.page_array.length
 				chapterObj.page_array.forEach(pageFilename => {
 					const file = pageFilename.split('.')
 					if (file.length !== 2) {
 						// pageFilename either doesn't have an extension,
 						// or there are multiple dots
-						const e = 'Please let the developers know: ' +
+						const e = 'Please let the developers know:\n' +
 							'"pfn0_' + pageFilename + '"'
 						console.error(e)
 						window.alert(e)
 						return
 					}
-					// file[0] is the file's base name
-					// file[1] is the extension
+					const baseName = file[0]
+					const extension = file[1]
 
-					const fn = file[0].match(/(\D+)?(\d+)(\D+)?/)
+					const fn = baseName.match(/(\D+)?(\d+)(\D+)?/)
 					if (fn === null || fn.length !== 4) {
 						// base name does not comply to the standard? structure
 						// [optional prefix][number][optional suffix]
-						const e = 'Please let the developers know: ' +
-							'"pfn1_' + file[0] + '"'
+						const e = 'Please let the developers know:\n' +
+							'"pfn1_' + baseName + '"'
 						console.error(e)
 						window.alert(e)
 						return
 					}
-					if (fn[1] === undefined) fn[1] = ''
-					if (fn[3] === undefined) fn[3] = ''
-					// fn[1] is the prefix, if it exists
-					// fn[2] is the page number
-					// fn[3] is the suffix, if it exists
+					const filePfix = noUndefined(fn[1])
+					const pageNr = fn[2].padStart(nrOfDigits(pagesNr), '0')
+					const fileSfix = noUndefined(fn[3])
 
-					const destinationFile =
-						fn[1] + fn[2].padStart(3, '0') + fn[3] + '.' + file[1]
-
+					// DESTINATION tab ORIGIN lf
 					pages +=
-						// destination
-						destinationFolder + destinationFile +
-
-						'\t' +
-
-						// origin
-						path + '/' + pageFilename +
-
-						'\n'
-				}) // foreach page_array
+						destinationFolder +
+						filePfix + pageNr + fileSfix + '.' + extension + '\t' +
+						path + '/' + pageFilename + '\n'
+				}) // foreach pageFilename in page_array
 			}) // fetch chapterObj
 		}, Promise.resolve()).then(() => {
 			if (window.confirm('Copy list to clipboard?')) {
