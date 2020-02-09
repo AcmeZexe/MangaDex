@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        MangaDex list generator
 // @namespace   AcmeZexe
-// @version     1.2.3
+// @version     1.2.3.1
 // @description -
 // @author      AcmeZexe
 // @match       *://mangadex.*/title/*/chapters*
@@ -143,8 +143,8 @@
 
 		try {
 			const lastChap = parseFloat(Chapters[Chapters.length - 1].chapter)
-			const chaptersInterval = parseFloat(Chapters[0].chapter)
-			const hint = ''
+			let chaptersInterval = parseFloat(Chapters[0].chapter)
+			let hint = ''
 
 			if (Chapters.length !== 1) chaptersInterval += '-' + lastChap
 			else hint = '\nSingle chapters (ex: ' + lastChap + ') also work'
